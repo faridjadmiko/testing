@@ -28,6 +28,7 @@ jobs:
           🖼️ \`${IMAGE_NAME}:${TAG}\`
 
           📝 Commit: *${COMMIT_MESSAGE}*
+          
           👤 Author: *${COMMIT_AUTHOR}*
           EOF
           )
