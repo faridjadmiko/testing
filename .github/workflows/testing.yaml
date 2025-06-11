@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Send Telegram notification
+      - name: Send Telegram Notification
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -20,18 +20,19 @@ jobs:
         run: |
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
-          IMAGE_NAME_ESCAPED=$(printf '%s' "$IMAGE_NAME" | sed -e 's/[][\`_*{}()#+\-.!|~>=]/\\&/g')
-          TAG_ESCAPED=$(printf '%s' "$TAG" | sed -e 's/[][\`_*{}()#+\-.!|~>=]/\\&/g')
-          COMMIT_MESSAGE_ESCAPED=$(printf '%s' "$COMMIT_MESSAGE" | sed -e 's/[][\`_*{}()#+\-.!|~>=]/\\&/g')
-          COMMIT_AUTHOR_ESCAPED=$(printf '%s' "$COMMIT_AUTHOR" | sed -e 's/[][\`_*{}()#+\-.!|~>=]/\\&/g')
 
-          MESSAGE="✅ Image \`${IMAGE_NAME_ESCAPED}:${TAG_ESCAPED}\` pushed to SWR.\n\n📝 Commit: *${COMMIT_MESSAGE_ESCAPED}*\n👤 Author: *${COMMIT_AUTHOR_ESCAPED}*"
+          # Hindari karakter aneh, cukup buat teks rapi saja
+          MESSAGE=$(cat <<EOF
+          ✅ *Image pushed to SWR*
 
-          # Send message using JSON to avoid shell escape issues
-          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
-            -H "Content-Type: application/json" \
-            -d "$(jq -n \
-              --arg chat_id "$TELEGRAM_CHAT_ID" \
-              --arg text "$MESSAGE" \
-              --arg parse_mode "MarkdownV2" \
-              '{chat_id: $chat_id, text: $text, parse_mode: $parse_mode}')"
+          🖼️ \`${IMAGE_NAME}:${TAG}\`
+
+          📝 Commit: *${COMMIT_MESSAGE}*
+          👤 Author: *${COMMIT_AUTHOR}*
+          EOF
+          )
+
+          curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
+            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d text="$MESSAGE" \
+            -d parse_mode=Markdown
