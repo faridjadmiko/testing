@@ -1,4 +1,4 @@
-name: Telegram Notify Only
+name: Pull Images & Telegram Notify
 
 on:
   push:
@@ -6,29 +6,58 @@ on:
       - main
 
 jobs:
-  notify:
+  pull-and-notify:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
+
+      - name: Login & Pull from SWR Cronos Engine
+        env:
+          SWR1_USERNAME: ${{ secrets.SWR1_USERNAME }}
+          SWR1_PASSWORD: ${{ secrets.SWR1_PASSWORD }}
+          SWR1_REGISTRY: swr.ap-southeast-3.myhuaweicloud.com
+          IMAGE1: swr.ap-southeast-3.myhuaweicloud.com/konnco/nginx-callback:1.0.0
+        run: |
+          echo "$SWR1_PASSWORD" | docker login $SWR1_REGISTRY -u "$SWR1_USERNAME" --password-stdin
+          docker pull $IMAGE1
+
+      - name: Login & Pull from SWR SPN PAY
+        env:
+          SWR2_USERNAME: ${{ secrets.SWR2_USERNAME }}
+          SWR2_PASSWORD: ${{ secrets.SWR2_PASSWORD }}
+          SWR2_REGISTRY: swr.ap-southeast-4.myhuaweicloud.com
+          IMAGE2: swr.ap-southeast-4.myhuaweicloud.com/konnco-spn/laravel-spn-core:0.1
+        run: |
+          echo "$SWR2_PASSWORD" | docker login $SWR2_REGISTRY -u "$SWR2_USERNAME" --password-stdin
+          docker pull $IMAGE2
+
+      - name: Login & Pull from SWR Midas System
+        env:
+          SWR3_USERNAME: ${{ secrets.SWR3_USERNAME }}
+          SWR3_PASSWORD: ${{ secrets.SWR3_PASSWORD }}
+          SWR3_REGISTRY: swr.ap-southeast-3.myhuaweicloud.com
+          IMAGE3: swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1
+        run: |
+          echo "$SWR3_PASSWORD" | docker login $SWR3_REGISTRY -u "$SWR3_USERNAME" --password-stdin
+          docker pull $IMAGE3
 
       - name: Send Telegram Notification
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          IMAGE_NAME: "test-image"
-          TAG: "latest"
         run: |
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
 
-          # Hindari karakter aneh, cukup buat teks rapi saja
           MESSAGE=$(cat <<EOF
-          ✅ *Image pushed to SWR*
+          ✅ *SWR Image Pull Success*
 
-          🖼️ \`${IMAGE_NAME}:${TAG}\`
+          - 📦 *Image 1:* \`$IMAGE1\`
+          - 📦 *Image 2:* \`$IMAGE2\`
+          - 📦 *Image 3:* \`$IMAGE3\`
 
           📝 Commit: *${COMMIT_MESSAGE}*
-          
           👤 Author: *${COMMIT_AUTHOR}*
           EOF
           )
