@@ -3,7 +3,7 @@ name: Pull Images & Telegram Notify
 on:
   push:
     branches:
-      - main
+      - development
 
 jobs:
   pull-and-notify:

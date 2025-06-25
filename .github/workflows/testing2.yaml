@@ -1,0 +1,92 @@
+name: Pull Images & Telegram Notify
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  pull-and-notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login & Pull from SWR Cronos Engine
+        env:
+          SWR1_USERNAME: ${{ secrets.SWR1_USERNAME }}
+          SWR1_PASSWORD: ${{ secrets.SWR1_PASSWORD }}
+          SWR1_REGISTRY: swr.ap-southeast-3.myhuaweicloud.com
+        run: |
+          echo "$SWR1_PASSWORD" | docker login $SWR1_REGISTRY -u "$SWR1_USERNAME" --password-stdin
+          docker pull swr.ap-southeast-3.myhuaweicloud.com/konnco/vapor83:0.2
+
+      - name: Login & Pull from SWR Midas System
+        env:
+          SWR2_USERNAME: ${{ secrets.SWR2_USERNAME }}
+          SWR2_PASSWORD: ${{ secrets.SWR2_PASSWORD }}
+          SWR2_REGISTRY: swr.ap-southeast-3.myhuaweicloud.com
+        run: |
+          echo "$SWR2_PASSWORD" | docker login $SWR2_REGISTRY -u "$SWR2_USERNAME" --password-stdin
+          docker pull swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1
+
+      # - name: Build Docker Midas
+      #   run: |
+      #     docker build -f docker/midas.Dockerfile \
+      #       -t swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:${{ github.event.release.tag_name }} .
+
+      - name: Tag Docker Image for Midas
+        run: |
+          docker tag \
+            swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1 \
+            swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:${{ github.event.release.tag_name }}
+
+      - name: Push Docker Image to Midas
+        run: |
+          docker push swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:${{ github.event.release.tag_name }}
+
+      - name: SSH to jumpbox and seed + apply
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.JUMPBOX_HOST }}
+          username: ${{ secrets.JUMPBOX_USER }}
+          key: ${{ secrets.JUMPBOX_PRIVATE_KEY }}
+          script: |
+            TAG_NAME="${{ github.event.release.tag_name }}"
+            cd /home/midas/prod-k8s
+            sed -i "/name: container-1/{n;s|image:.*|image: swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:${TAG_NAME}|}" api.yaml
+            sudo kubectl apply -f api.yaml
+
+      - name: List Docker Images
+        run: docker images
+
+      - name: Send Telegram Notification and Clean Up
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          IMAGE1="swr.ap-southeast-3.myhuaweicloud.com/konnco/vapor83:0.2"
+          IMAGE2="swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1"
+
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+
+          MESSAGE=$(cat <<EOF
+          ✅ *SWR Image Pull Success*
+
+          - 📦 *Image 1:* \`$IMAGE1\`
+          - 📦 *Image 2:* \`$IMAGE2\`
+          - 🏷️ *Tag Built:* \`$TAG_NAME\`
+
+          📝 Commit: *${COMMIT_MESSAGE}*
+          👤 Author: *${COMMIT_AUTHOR}*
+          EOF
+                    )
+
+          curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
+            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d text="$MESSAGE" \
+            -d parse_mode=Markdown
+
+          echo "🧹 Menghapus semua Docker image..."
+          docker rmi -f $(docker images -q) || true
