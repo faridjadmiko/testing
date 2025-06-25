@@ -27,7 +27,7 @@ jobs:
           SWR2_REGISTRY: swr.ap-southeast-3.myhuaweicloud.com
         run: |
           echo "$SWR2_PASSWORD" | docker login $SWR2_REGISTRY -u "$SWR2_USERNAME" --password-stdin
-          docker pull swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1
+          docker pull swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:0.2
 
       # - name: Build Docker Midas
       #   run: |
@@ -37,7 +37,7 @@ jobs:
       - name: Tag Docker Image for Midas
         run: |
           docker tag \
-            swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1 \
+            swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:0.2 \
             swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:${{ github.event.release.tag_name }}
 
       - name: Push Docker Image to Midas
