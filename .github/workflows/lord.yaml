@@ -78,9 +78,9 @@ jobs:
           MESSAGE=$(cat <<EOF
           ✅ *SWR Image Pull & Push Success*
 
-          - 📦 *Image 1:* \`${IMAGE_VAPOR}\`
-          - 📦 *Image 2:* \`${IMAGE_NGINX}\`
-          - 🚀 *Image Built:* \`${IMAGE_BASE}:${TAG_NAME}\`
+          - 📦 *Image 1:* $IMAGE_VAPOR
+          - 📦 *Image 2:* $IMAGE_NGINX
+          - 🚀 *Image Built:* $IMAGE_BASE:$TAG_NAME
 
           📝 Commit: *${COMMIT_MESSAGE}*
           👤 Author: *${COMMIT_AUTHOR}*
