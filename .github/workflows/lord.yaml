@@ -82,7 +82,7 @@ jobs:
           - 📦 Image 2: $IMAGE_NGINX
           - 🚀 Image Built: $IMAGE_BASE:$TAG_NAME
 
-          📝 Commit: {COMMIT_MESSAGE}
+          📝 Commit: ${COMMIT_MESSAGE}
           👤 Author: ${COMMIT_AUTHOR}
           EOF
           )
