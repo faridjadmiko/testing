@@ -52,27 +52,32 @@ jobs:
         run: docker images
 
       - name: Send Telegram Notification and Clean Up
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           IMAGE1="swr.ap-southeast-3.myhuaweicloud.com/konnco/vapor83:0.2"
           IMAGE2="swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1"
+          TAG_NAME="$TAG_NAME"
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
 
           MESSAGE=$(cat <<EOF
-          ✅ SWR Image Pull & Push Success
+          ✅ *SWR Image Pull & Push Success*
 
-          - 📦 Image 1: $IMAGE1
-          - 📦 Image 2: $IMAGE2
-          - 🚀 Image Built: swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:$TAG_NAME
+          📦 *Image 1:* \`$IMAGE1\`
+          📦 *Image 2:* \`$IMAGE2\`
+          🚀 *Image Built:* \`swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:$TAG_NAME\`
 
-          📝 Commit: $COMMIT_MESSAGE
-          👤 Author: $COMMIT_AUTHOR
+          📝 Commit: *$COMMIT_MESSAGE*
+          👤 Author: *$COMMIT_AUTHOR*
           EOF
           )
 
-          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
-            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="$MESSAGE"
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode=Markdown
 
           echo "🧹 Menghapus semua Docker image..."
           docker rmi -f $(docker images -q) || true
