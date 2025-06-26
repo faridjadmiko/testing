@@ -37,16 +37,16 @@ jobs:
         run: |
           docker push swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:$TAG_NAME
 
-      - name: SSH to jumpbox and apply K8s changes
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.JUMPBOX_HOST }}
-          username: ${{ secrets.JUMPBOX_USER }}
-          key: ${{ secrets.JUMPBOX_PRIVATE_KEY }}
-          script: |
-            cd /home/midas/prod-k8s
-            sed -i "/name: container-1/{n;s|image:.*|image: swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:${TAG_NAME}|}" api.yaml
-            sudo kubectl apply -f api.yaml
+      # - name: SSH to jumpbox and apply K8s changes
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.JUMPBOX_HOST }}
+      #     username: ${{ secrets.JUMPBOX_USER }}
+      #     key: ${{ secrets.JUMPBOX_PRIVATE_KEY }}
+      #     script: |
+      #       cd /home/midas/prod-k8s
+      #       sed -i "/name: container-1/{n;s|image:.*|image: swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-midas-core:${TAG_NAME}|}" api.yaml
+      #       sudo kubectl apply -f api.yaml
 
       - name: List Docker Images
         run: docker images
