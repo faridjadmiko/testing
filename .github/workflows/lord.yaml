@@ -51,35 +51,35 @@ jobs:
       - name: List Docker Images
         run: docker images
 
-- name: Send Telegram Notification and Clean Up
-  env:
-    TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-    TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-  run: |
-    TAG_NAME="${{ github.event.release.tag_name }}"
-    IMAGE1="swr.ap-southeast-3.myhuaweicloud.com/konnco/vapor83:0.2"
-    IMAGE2="swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1"
+      - name: Send Telegram Notification and Clean Up
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          IMAGE1="swr.ap-southeast-3.myhuaweicloud.com/konnco/vapor83:0.2"
+          IMAGE2="swr.ap-southeast-3.myhuaweicloud.com/konnco-midas/laravel-nginx-core:0.1"
 
-    COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" | sed -e 's/[*_()\[\]`]/\\&/g')
-    COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" | sed -e 's/[*_()\[\]`]/\\&/g')
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
 
-    MESSAGE=$(cat <<EOF
-    ✅ *SWR Image Pull Success*
+          MESSAGE=$(cat <<EOF
+          ✅ *SWR Image Pull Success*
 
-    - 📦 *Image 1:* \`$IMAGE1\`
-    - 📦 *Image 2:* \`$IMAGE2\`
-    - 🏷️ *Tag Built:* \`$TAG_NAME\`
+          - 📦 *Image 1:* \`$IMAGE1\`
+          - 📦 *Image 2:* \`$IMAGE2\`
+          - 🏷️ *Tag Built:* \`$TAG_NAME\`
 
-    📝 Commit: *$COMMIT_MESSAGE*
-    👤 Author: *$COMMIT_AUTHOR*
-    EOF
-        )
+          📝 Commit: *$COMMIT_MESSAGE*
+          👤 Author: *$COMMIT_AUTHOR*
+          EOF
+              )
 
-    curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
-      -d chat_id="$TELEGRAM_CHAT_ID" \
-      -d text="$MESSAGE" \
-      -d parse_mode=Markdown
+          curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
+            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d text="$MESSAGE" \
+            -d parse_mode=Markdown
 
-    echo "🧹 Menghapus semua Docker image..."
-    docker rmi -f $(docker images -q) || true
+          echo "🧹 Menghapus semua Docker image..."
+          docker rmi -f $(docker images -q) || true
 
